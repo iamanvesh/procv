@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">PROCV</string>
+
+    <!-- ImagePreviewActivity -->
+    <string name="save_img_btn_title">SAVE</string>
+    <string name="delete_img_btn_title">DELETE</string>
+</resources>
