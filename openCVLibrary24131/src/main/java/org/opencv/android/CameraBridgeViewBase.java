@@ -374,6 +374,12 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
         }
     }
 
+    // added this to fix orientation issue in portrait
+    private int userRotation = 0;
+    public void setUserRotation(int userRotation) {
+        this.userRotation = userRotation;
+    }
+
     /**
      * This method shall be called by the subclasses when they have valid
      * object and want it to be delivered to external client (via callback) and
@@ -407,6 +413,10 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
                 canvas.drawColor(0, android.graphics.PorterDuff.Mode.CLEAR);
                 Log.d(TAG, "mStretch value: " + mScale);
 
+                // added this to fix orientation issue in portrait
+                canvas.save();
+                canvas.rotate(userRotation, (canvas.getWidth() / 2), (canvas.getHeight() / 2));
+
                 if (mScale != 0) {
                     canvas.drawBitmap(mCacheBitmap, new Rect(0,0,mCacheBitmap.getWidth(), mCacheBitmap.getHeight()),
                          new Rect((int)((canvas.getWidth() - mScale*mCacheBitmap.getWidth()) / 2),
@@ -425,6 +435,9 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
                     mFpsMeter.measure();
                     mFpsMeter.draw(canvas, 20, 30);
                 }
+
+                // added this to fix orientation issue in portrait
+                canvas.restore();
                 getHolder().unlockCanvasAndPost(canvas);
             }
         }

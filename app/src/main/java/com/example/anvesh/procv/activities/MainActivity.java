@@ -97,9 +97,9 @@ public class MainActivity extends AppCompatActivity implements
         mOpenCvCameraView.setCvCameraViewListener(this);
         mOpenCvCameraView.setOnTouchListener(this);
         mOpenCvCameraView.setCameraEventsCallback(cameraEventsCallback);
+        // Rotate the preview stream 90 to fix portrait issue
+        mOpenCvCameraView.setUserRotation(90);
         mOpenCvCameraView.setResolution(getHighestResolutionInAspectRatio4_3());
-//        Camera.Size res = getHighestResolutionInAspectRatio4_3();
-//        mOpenCvCameraView.setMaxFrameSize(res.width, res.height);
 
         String customFolderName = getIntent().getStringExtra("folderName");
         folderName = (customFolderName == null || customFolderName.isEmpty() ||
