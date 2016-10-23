@@ -2,28 +2,23 @@ package com.example.anvesh.procv.views;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Rect;
 import android.hardware.Camera;
-import android.net.Uri;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.WindowManager;
+import android.view.MotionEvent;
 
-import com.example.anvesh.procv.utils.BitmapCache;
-import com.example.anvesh.procv.utils.ImgTools;
 import com.example.anvesh.procv.intfs.CameraEvents;
+import com.example.anvesh.procv.utils.ImgTools;
 
 import org.opencv.android.JavaCameraView;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
-import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,11 +28,12 @@ import java.util.List;
 public class CustomCameraView extends JavaCameraView implements Camera.PictureCallback {
     private final String TAG = "CustomCameraView";
     private CameraEvents cameraEventsCallback;
+    private boolean safeToTakePicture = true;
+    private final int FOCUS_AREA_SIZE = 300;
 
     public CustomCameraView(Context ctx, AttributeSet attrs) {
         super(ctx, attrs);
     }
-    private boolean safeToTakePicture = true;
 
     public void setResolution(Camera.Size resolution) {
         disconnectCamera();
@@ -89,10 +85,10 @@ public class CustomCameraView extends JavaCameraView implements Camera.PictureCa
         Imgproc.findContours(gray, contours, hierarchy,
                 Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
-        List<Rect> squares = new ArrayList<>();
+        List<org.opencv.core.Rect> squares = new ArrayList<>();
         for(int i = 0; i < contours.size(); ++i) {
             MatOfPoint currentContour = contours.get(i);
-            Rect rect = Imgproc.boundingRect(currentContour);
+            org.opencv.core.Rect rect = Imgproc.boundingRect(currentContour);
             Mat m = gray.submat(rect);
             Core.extractChannel(m, m, 0);
             int totalPixels = m.rows() * m.cols();
@@ -141,4 +137,54 @@ public class CustomCameraView extends JavaCameraView implements Camera.PictureCa
     public void setCameraEventsCallback(CameraEvents cameraEventsCallback) {
         this.cameraEventsCallback = cameraEventsCallback;
     }
+
+    public void focusOnTouch(MotionEvent event) {
+        if (mCamera != null) {
+            Camera.Parameters parameters = mCamera.getParameters();
+
+            Rect focusAreaRect = calculateFocusArea(event.getX(), event.getY());
+
+            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+            List<Camera.Area> meteringAreas = new ArrayList<Camera.Area>();
+            meteringAreas.add(new Camera.Area(focusAreaRect, 800));
+            parameters.setFocusAreas(meteringAreas);
+
+            mCamera.setParameters(parameters);
+            mCamera.autoFocus(mAutoFocusTakePictureCallback);
+        } else {
+            mCamera.autoFocus(mAutoFocusTakePictureCallback);
+        }
+    }
+
+    private Rect calculateFocusArea(float x, float y) {
+        int left = clamp(Float.valueOf((x / this.getWidth()) * 2000 - 1000).intValue(), FOCUS_AREA_SIZE);
+        int top = clamp(Float.valueOf((y / this.getHeight()) * 2000 - 1000).intValue(), FOCUS_AREA_SIZE);
+
+        return new Rect(left, top, left + FOCUS_AREA_SIZE, top + FOCUS_AREA_SIZE);
+    }
+
+    private int clamp(int touchCoordinateInCameraReper, int focusAreaSize) {
+        int result;
+        if (Math.abs(touchCoordinateInCameraReper)+focusAreaSize/2>1000){
+            if (touchCoordinateInCameraReper>0){
+                result = 1000 - focusAreaSize/2;
+            } else {
+                result = -1000 + focusAreaSize/2;
+            }
+        } else{
+            result = touchCoordinateInCameraReper - focusAreaSize/2;
+        }
+        return result;
+    }
+
+    private Camera.AutoFocusCallback mAutoFocusTakePictureCallback = new Camera.AutoFocusCallback() {
+        @Override
+        public void onAutoFocus(boolean success, Camera camera) {
+            if(success) {
+                Log.v(TAG, "focus: success");
+            } else {
+                Log.v(TAG, "focus: failed");
+            }
+        }
+    };
 }

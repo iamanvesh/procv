@@ -38,8 +38,9 @@ public class MainActivity extends AppCompatActivity implements
         CameraBridgeViewBase.CvCameraViewListener2, View.OnTouchListener {
     private final String TAG = "MainActivity";
     private CustomCameraView mOpenCvCameraView;
-    private boolean safeToTakePicture = false;
+    private boolean readyToTakePicture = false;
     private boolean isCaptureMessageShown = false;
+    private boolean isFocusMessageShown = false;
     // TODO: Add permission request dialogs
     private final int REQUEST_CAMERA_PERMISSION = 1;
     private final int REQUEST_SDCARD_PERMISSION = 2;
@@ -64,7 +65,7 @@ public class MainActivity extends AppCompatActivity implements
     private CameraEvents cameraEventsCallback = new CameraEvents() {
         @Override
         public void readyToTakePicture() {
-            safeToTakePicture = true;
+            readyToTakePicture = true;
         }
 
         @Override
@@ -127,7 +128,7 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     protected void onPause() {
         super.onPause();
-        safeToTakePicture = false;
+        readyToTakePicture = false;
         isCaptureMessageShown = false;
         if(mOpenCvCameraView != null)
             mOpenCvCameraView.disableView();
@@ -158,12 +159,20 @@ public class MainActivity extends AppCompatActivity implements
      */
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-        if(safeToTakePicture && !isCaptureMessageShown) {
+        if(readyToTakePicture && !isCaptureMessageShown) {
             isCaptureMessageShown = true;
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     Toast.makeText(MainActivity.this, "Touch to capture image!", Toast.LENGTH_SHORT).show();
+                }
+            });
+        } else if(!readyToTakePicture && !isFocusMessageShown) {
+            isFocusMessageShown = true;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(MainActivity.this, "Tap to focus..", Toast.LENGTH_SHORT).show();
                 }
             });
         }
@@ -172,8 +181,10 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public boolean onTouch(View view, MotionEvent motionEvent) {
-        if(safeToTakePicture) {
+        if(readyToTakePicture) {
             mOpenCvCameraView.takePicture();
+        } else {
+            mOpenCvCameraView.focusOnTouch(motionEvent);
         }
         return true;
     }
