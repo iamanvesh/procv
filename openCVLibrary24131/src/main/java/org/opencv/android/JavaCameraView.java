@@ -142,7 +142,12 @@ public class JavaCameraView extends CameraBridgeViewBase implements PreviewCallb
 
                 if (sizes != null) {
                     /* Select the size that fits surface considering maximum size allowed */
-                    Size frameSize = calculateCameraFrameSize(sizes, new JavaCameraSizeAccessor(), width, height);
+//                    Size frameSize = calculateCameraFrameSize(sizes, new JavaCameraSizeAccessor(), width, height);
+
+                    // width and height change due to orientation
+                    int adjustedHeight = width;
+                    int adjustedWidth = height;
+                    Size frameSize = calculateCameraFrameSize(sizes, new JavaCameraSizeAccessor(), adjustedWidth, adjustedHeight);
 
                     params.setPreviewFormat(ImageFormat.NV21);
                     Log.d(TAG, "Set preview size to " + Integer.valueOf((int)frameSize.width) + "x" + Integer.valueOf((int)frameSize.height));
@@ -164,7 +169,7 @@ public class JavaCameraView extends CameraBridgeViewBase implements PreviewCallb
                     mFrameHeight = params.getPreviewSize().height;
 
                     if ((getLayoutParams().width == LayoutParams.MATCH_PARENT) && (getLayoutParams().height == LayoutParams.MATCH_PARENT))
-                        mScale = Math.min(((float)height)/mFrameHeight, ((float)width)/mFrameWidth);
+                        mScale = Math.min(((float)adjustedHeight)/mFrameHeight, ((float)adjustedWidth)/mFrameWidth);
                     else
                         mScale = 0;
 
