@@ -1,9 +1,15 @@
 package com.example.anvesh.procv.activities;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -24,6 +30,8 @@ import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Mat;
 
 import java.io.File;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements
@@ -34,14 +42,16 @@ public class MainActivity extends AppCompatActivity implements
     private boolean isCaptureMessageShown = false;
     // TODO: Add permission request dialogs
     private final int REQUEST_CAMERA_PERMISSION = 1;
+    private final int REQUEST_SDCARD_PERMISSION = 2;
+    private final int REQUEST_CAMERA_SDCARD_PERMISSIONS = 3;
+    private final int GENERIC_PERMISSION_REQUEST = 4;
     private String folderName;
 
     private BaseLoaderCallback mBaseLoaderCallback = new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
             switch (status) {
-                case BaseLoaderCallback.SUCCESS: {
-                    Log.d(TAG, "OpenCV loaded successfully");
+                case BaseLoaderCallback.SUCCESS: { Log.d(TAG, "OpenCV loaded successfully");
                     mOpenCvCameraView.enableView();
                 } break;
                 default: {
@@ -75,13 +85,21 @@ public class MainActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_main);
-
         mOpenCvCameraView = (CustomCameraView) findViewById(R.id.opencvCameraView);
+        if (Build.VERSION.SDK_INT >= 23)
+            askPermissions();
+        else
+            setCameraView();
+    }
+
+    private void setCameraView() {
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
         mOpenCvCameraView.setCvCameraViewListener(this);
         mOpenCvCameraView.setOnTouchListener(this);
         mOpenCvCameraView.setCameraEventsCallback(cameraEventsCallback);
         mOpenCvCameraView.setResolution(getHighestResolutionInAspectRatio4_3());
+//        Camera.Size res = getHighestResolutionInAspectRatio4_3();
+//        mOpenCvCameraView.setMaxFrameSize(res.width, res.height);
 
         String customFolderName = getIntent().getStringExtra("folderName");
         folderName = (customFolderName == null || customFolderName.isEmpty() ||
@@ -153,6 +171,19 @@ public class MainActivity extends AppCompatActivity implements
         Camera.Parameters params = mCamera.getParameters();
         List<Camera.Size> supportedSizes = params.getSupportedPreviewSizes();
         mCamera.release();
+
+        // Sort sizes from high res to low res
+        Collections.sort(supportedSizes, new Comparator<Camera.Size>() {
+            @Override
+            public int compare(Camera.Size size, Camera.Size t1) {
+                if(size.width > t1.width)
+                    return -1;
+                else if(size.width < t1.width)
+                    return 1;
+                return 0;
+            }
+        });
+
         final float ASPECT_RATIO_4_3 = 1.33333f;
         final float MARGIN_ERROR = 0.0001f;
         for(Camera.Size size : supportedSizes) {
@@ -162,5 +193,52 @@ public class MainActivity extends AppCompatActivity implements
             }
         }
         return null;
+    }
+
+    public void askPermissions() {
+        boolean cameraPermission = (ContextCompat.checkSelfPermission(MainActivity.this,
+                Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED);
+        boolean sdcardPermission = (ContextCompat.checkSelfPermission(MainActivity.this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
+
+        if(!cameraPermission && sdcardPermission) {
+            ActivityCompat.requestPermissions(MainActivity.this,
+                    new String[]{Manifest.permission.CAMERA}, GENERIC_PERMISSION_REQUEST);
+        } else if (cameraPermission && !sdcardPermission) {
+            ActivityCompat.requestPermissions(MainActivity.this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, GENERIC_PERMISSION_REQUEST);
+        } else if(!cameraPermission && !sdcardPermission) {
+            ActivityCompat.requestPermissions(MainActivity.this,
+                    new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    REQUEST_CAMERA_SDCARD_PERMISSIONS);
+        } else {
+            setCameraView();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case GENERIC_PERMISSION_REQUEST: {
+                if(grantResults.length > 0 &&
+                        grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    setCameraView();
+                } else {
+                    Toast.makeText(MainActivity.this, "Permission needed!", Toast.LENGTH_SHORT).show();
+                }
+                return;
+            }
+            case REQUEST_CAMERA_SDCARD_PERMISSIONS: {
+                int granted = PackageManager.PERMISSION_GRANTED;
+                if(grantResults.length > 0) {
+                    if(grantResults[0] == granted && grantResults[1] == granted) {
+                        setCameraView();
+                    } else {
+                        Toast.makeText(MainActivity.this, "Permissions needed!", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+        }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 }

@@ -108,9 +108,9 @@ public class CustomCameraView extends JavaCameraView implements Camera.PictureCa
                 }
             }
         }
-
+        Log.v("total", "" + squares.size());
         if(squares.size() == 4) {
-            float MARGIN_ERROR = 100.0f;
+            float MARGIN_ERROR = 150.0f;
 
             boolean d1d2 = (Math.abs(squares.get(0).area() - squares.get(1).area()) <= MARGIN_ERROR);
             boolean d2d3 = (Math.abs(squares.get(1).area() - squares.get(2).area()) <= MARGIN_ERROR);

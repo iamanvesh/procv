@@ -31,4 +31,8 @@ public class BitmapCache {
     public void putBitmap(File file, Bitmap bitmap) {
         bitmapLruCache.put(file, bitmap);
     }
+
+    public void removeBitmap(File file) {
+        bitmapLruCache.remove(file);
+    }
 }

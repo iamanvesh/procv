@@ -6,11 +6,16 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".activities.MainActivity">
 
-    <com.example.anvesh.procv.views.CustomCameraView
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="gone"
-        android:id="@+id/opencvCameraView" />
+        android:layout_height="match_parent">
+
+        <com.example.anvesh.procv.views.CustomCameraView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            android:id="@+id/opencvCameraView" />
+    </FrameLayout>
 
 
 </LinearLayout>

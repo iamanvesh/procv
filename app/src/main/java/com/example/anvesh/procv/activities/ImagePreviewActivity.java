@@ -1,7 +1,6 @@
 package com.example.anvesh.procv.activities;
 
 import android.graphics.Bitmap;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -44,6 +43,7 @@ public class ImagePreviewActivity extends AppCompatActivity {
     }
 
     public void deleteImgFromCache(View view) {
-
+        BitmapCache.getInstance().removeBitmap(imageFile);
+        finish();
     }
 }
