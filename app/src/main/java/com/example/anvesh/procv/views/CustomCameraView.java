@@ -57,7 +57,8 @@ public class CustomCameraView extends JavaCameraView implements Camera.PictureCa
                 // camera preview is in landscape so rotate
                 // the image 90 degrees in clockwise direction
                 Bitmap rotatedImageBitmap = ImgTools.rotateImage(bytes, 90);
-                cameraEventsCallback.onPictureCaptured(rotatedImageBitmap);
+                cameraEventsCallback.onBitmapAvailable(rotatedImageBitmap);
+//                cameraEventsCallback.onPictureCaptured(rotatedImageBitmap);
                 safeToTakePicture = true;
             }
         });
@@ -66,6 +67,7 @@ public class CustomCameraView extends JavaCameraView implements Camera.PictureCa
 
     public void takePicture() {
         mCamera.setPreviewCallback(null);
+        cameraEventsCallback.onPictureCaptured();
 
         if(safeToTakePicture) {
             mCamera.takePicture(null, null, this);

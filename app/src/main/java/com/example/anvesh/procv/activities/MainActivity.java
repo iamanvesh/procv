@@ -68,7 +68,19 @@ public class MainActivity extends AppCompatActivity implements
         }
 
         @Override
-        public void onPictureCaptured(Bitmap imageBitmap) {
+        public void onPictureCaptured() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(MainActivity.this,
+                            "Capturing image.. Please wait.",
+                            Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        @Override
+        public void onBitmapAvailable(Bitmap imageBitmap) {
             // cache the bitmap
             File imageFile = ImgTools.getImgFile(folderName);
             BitmapCache.getInstance().putBitmap(imageFile, imageBitmap);

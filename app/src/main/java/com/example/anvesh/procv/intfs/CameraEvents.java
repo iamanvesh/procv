@@ -9,5 +9,6 @@ import java.io.File;
  */
 public interface CameraEvents {
     public void readyToTakePicture();
-    public void onPictureCaptured(Bitmap imageBitmap);
+    public void onPictureCaptured();
+    public void onBitmapAvailable(Bitmap imageBitmap);
 }
